@@ -1,0 +1,4 @@
+Timezone
+Live update text
+shows two bus stop names at once
+select topmost bus
