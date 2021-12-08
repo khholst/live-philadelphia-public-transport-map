@@ -11,6 +11,8 @@ let selectedVehicleInfo; //Info shown on right pane
 let menu; //Menu instance
 let selectedVehicleIndex;
 let transportationMode = "bus/trolley";
+const busMode = "bus/trolley";
+const railMode = "rail"
 let digitalFont;
 
 //Images
@@ -82,7 +84,7 @@ function draw() {
   }
 
   if (vehicles.length != 0) {
-    for (let i = 0; i < vehicles.length; i++) {
+    for (let i = vehicles.length - 1; i >= 0; i--) {
       vehicles[i].show(baseMap);
     }
   }
@@ -133,10 +135,16 @@ function routeChanged() {
   routeNumber = routeDropdown.value()
   vehicles = [];
   busStops = [];
+  selectedVehicleIndex = undefined;
   askRouteStops(routeNumber);
-  getRouteStartEnd(liveBusData.routes[0][routeNumber])
-  menu = new BusMenu(selectedVehicleInfo, routeNumber, routeText)
-  getBusRoutes(liveBusData);
+  if (transportationMode === busMode) { 
+    getRouteStartEnd(liveBusData.routes[0][routeNumber]); 
+    menu = new BusMenu(selectedVehicleInfo, routeNumber, routeText);
+    getBusRoutes(liveBusData);
+  } else if (transportationMode == railMode) {
+      menu = new TrainMenu(selectedVehicleInfo, routeNumber);
+      getRailRoutes();
+  }
 }
 
 
@@ -145,18 +153,23 @@ function askRoutes(){
   if (transportationMode === "bus/trolley") {
     loadJSON("https://www3.septa.org/hackathon/TransitViewAll/", getBusRoutes, "jsonp");
   } else if (transportationMode === "rail") {
-    loadJSON("http://www3.septa.org/hackathon/TrainView/",  getRailRoutes, "jsonp");
+    loadJSON("https://www3.septa.org/hackathon/TrainView/",  getRailRoutes, "jsonp");
   }
+}
+
+function askRouteStops(routeNumber) {
+  loadJSON("https://www3.septa.org/hackathon/Stops/?req1=" + routeNumber, getRouteStops, "jsonp");
 }
 
 
 function getRailRoutes(railData) {
-  if (railData === undefined) return;
-  liveRailData = railData; //Update for live rail routes
+  if (railData != undefined)
+    liveRailData = railData; //Update for live rail routes
+  if (liveRailData === undefined) return;
 
   for (let i in liveRailData) {
-    if (routeDropdown.value() === railData[i].line) {
-      const train = railData[i];
+    if (routeDropdown.value() === liveRailData[i].line) {
+      const train = liveRailData[i];
 
       const trainNr = Number(train.trainno);
       const trainLat = Number(train.lat);
@@ -199,8 +212,6 @@ function getBusRoutes(busData) {
   const route = allRoutes[routeNumber];
 
   if (route != undefined) {
-    getRouteStartEnd(route);
-
     for (let i = 0; i < route.length; i++) {
       const vehicleData = route[i];
       const tripID = Number(vehicleData.trip);
@@ -227,17 +238,12 @@ function getBusRoutes(busData) {
       if (!vehicleExists) { //If current bus is not yet an instance
         vehicles.push(new Bus(tripID, vehicleX, vehicleY, timing, destination, nextStop, direction, seats))
       }
-      
-      if (selectedVehicleIndex != undefined) {
-        selectedVehicleInfo = vehicles[selectedVehicleIndex].updateInfo(); //Update selected vehicle information text
-      }
+    }
+    if (selectedVehicleIndex != undefined) {
+      selectedVehicleInfo = vehicles[selectedVehicleIndex].updateInfo(); //Update selected vehicle information text
+      menu = new BusMenu(selectedVehicleInfo, routeNumber, routeText);
     }
   }
-}
-
-
-function askRouteStops(routeNumber) {
-  loadJSON("https://www3.septa.org/hackathon/Stops/?req1=" + routeNumber, getRouteStops, "jsonp");
 }
 
 
@@ -262,17 +268,8 @@ function getRouteStartEnd(route) {
 
 
 
-
-
 function mouseClicked() {
   if (vehicles.length != 0) {
-    // selectedVehicleInfo = undefined;
-    // selectedVehicleIndex = undefined;
-    // menu = new BusMenu(selectedVehicleInfo, routeNumber, routeText)
-
-
-    //Get vehicle info on mouse click
-    let isSelected = false;
     for (let i = 0; i < vehicles.length; i++) {
       const info = vehicles[i].select();
       
@@ -280,18 +277,9 @@ function mouseClicked() {
       if (info != undefined) { 
         selectedVehicleInfo = info;
         selectedVehicleIndex = i;
-        isSelected = true;
         break; 
       }
     }
-
-    // if (isSelected) {
-    //   print("lol")
-    //   selectedVehicleInfo = undefined;
-    //   selectedVehicleIndex = undefined;
-    //   menu = new BusMenu(selectedVehicleInfo, routeNumber, routeText)
-
-    // }
 
     //Deselect vehicles that are farther than 10px from click except the one that's selected
     for (let i = 0; i < vehicles.length; i++) {
@@ -303,25 +291,27 @@ function mouseClicked() {
 
   //Change transportation mode
   if (dist(mouseX, mouseY, width - 130, height - 100) <= 45) { 
-    transportationMode = "bus/trolley"; 
+    transportationMode = busMode; 
     vehicles = [];
     selectedVehicleInfo = undefined;
     selectedVehicleIndex = undefined;
     routeNumber = undefined;
     routeText = undefined;
+    menu = new BusMenu();
     routeDropdown.remove();
     createDropdownMenu();
-    routeDropdown.option("Choose a live bus/train route");
+    routeDropdown.option("Choose a live bus/trolley route");
     addLiveBusRoutes();
   }
   
   else if (dist(mouseX, mouseY, width - 70, height - 100) <= 45) { 
-    transportationMode = "rail";
+    transportationMode = railMode;
     vehicles = [];
     selectedVehicleInfo = undefined;
     selectedVehicleIndex = undefined;
     routeNumber = undefined;
     routeText = undefined;
+    menu = new TrainMenu();
     routeDropdown.remove();
     createDropdownMenu();
     routeDropdown.option("Choose a live rail route");
@@ -330,57 +320,19 @@ function mouseClicked() {
 }
 
 
-
-function formatNextStop(nextStop) {
-  if (nextStop == null) { return "Unknown"; }
-  else { return nextStop; }
-}
-
-function formatSeats(seats) {
-  if (seats === "MANY_SEATS_AVAILABLE") { return "Many seats available"; }
-  else if (seats ===  "NOT_AVAILABLE") { return "No seats available"; }
-  else { return "Unknown"; }
-}
-
-//Take timing in minutes and transform it into a string
-function timingToString(timing) {
-  let outString;
-  const timingInt = parseInt(timing);
-
-  //Minute for one, minutes for several
-  let minute = "minutes";
-  if (timingInt === 1 || timingInt === -1) { 
-    minute = "minute";
-  }
-
-  //Handle 999 (unknown) timing
-  if (timingInt > 100) { outString = `Unknown`; }
-
-  //Remove the minus when early
-  else if (timingInt < 0) { 
-    timing = -timingInt;
-    outString = `Early (${timing} ${minute})`; 
-  }
-  else if (timingInt > 0) { outString = `Late (${timing} ${minute})`; }
-  else if (timingInt === 0) { outString = `On time`; }
-
-  return outString;
-}
-
-
 //Parse time 
 function drawTime() {  
-  const date = new Date();
+  let date = new Date();
 
-  let hour = (date.getUTCHours() - 5).toString();
-  let minute = date.getMinutes().toString();
-  let second = date.getSeconds().toString();
+  date = ((typeof date === "string" ? new Date(date) : date).toLocaleString("en-GB", {timeZone: "EST"})); 
+  time = date.split(", ")[1];
+  timePieces = time.split(":");
 
-  if (hour.length < 2) { hour = "0" + hour; }
-  if (minute.length < 2) { minute = "0" + minute; }
-  if (second.length < 2) { second = "0" + second; }
+  let hour = timePieces[0];
+  let minute = timePieces[1];
+  let second = timePieces[2];
 
-  strokeWeight(1)  
+  strokeWeight(1);
   stroke(255, 255, 255)
   fill(0, 0, 0, 150);
   textFont(digitalFont)
@@ -388,6 +340,7 @@ function drawTime() {
 
   text(hour  + ":" + minute + ":" + second, width - 100, height - 45);
 }
+
 
 function drawModeButtons() {
   imageMode(CENTER);

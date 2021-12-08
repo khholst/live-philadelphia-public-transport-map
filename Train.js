@@ -26,6 +26,17 @@ class Train extends Vehicle {
     }
 
 
+    select() {
+        if (this.locationInPixels != undefined) {
+            if (dist(mouseX, mouseY, this.locationInPixels.x, this.locationInPixels.y) < 15) {
+                this.img = whiteBus;
+                menu = new TrainMenu(this.updateInfo(), routeNumber, routeText)
+                return this.updateInfo();
+            }
+        }
+    }
+
+
     deselect() {
         this.img = blackTrain;
     }

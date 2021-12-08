@@ -21,11 +21,11 @@ class Bus extends Vehicle {
 
     select() {
         if (this.locationInPixels != undefined) {
-            if (dist(mouseX, mouseY, this.locationInPixels.x, this.locationInPixels.y) < 10) {
+            if (dist(mouseX, mouseY, this.locationInPixels.x, this.locationInPixels.y) < 15) {
                 this.img = whiteBus;
                 menu = new BusMenu(this.updateInfo(), routeNumber, routeText)
-                return this.updateInfo();
-            }// else { this.img = blackBus; }
+                return this.updateInfo();//check if neccesary
+            }
         }
     }
 
