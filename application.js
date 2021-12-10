@@ -1,12 +1,13 @@
 let baseMap;
 let liveBusData;
 let liveRailData;
+let railStations;
 let routeNumber = 0; //Selected route
 let routeText; //Route destinations
 let routeDropdown;
 
 let vehicles = []; //List for vehicle instances
-let busStops = []; //List for bus stop instances
+let stops = []; //List for bus stop instances
 let selectedVehicleInfo; //Info shown on right pane
 let menu; //Menu instance
 let selectedVehicleIndex;
@@ -29,12 +30,13 @@ const key = "pk.eyJ1Ijoia2hob2xzdDIzIiwiYSI6ImNrMnpjd2x2NjAzdHQzbm8yOGM5M3M2MHAi
 function preload() {
   liveBusData = loadJSON("https://www3.septa.org/hackathon/TransitViewAll/", "jsonp");
   liveRailData = loadJSON("http://www3.septa.org/hackathon/TrainView/", "jsonp");
-  blackBus = loadImage("/vehicleImgs/bus_black.png");
-  whiteBus = loadImage("/vehicleImgs/bus_white.png");
-  blackTrain = loadImage("/vehicleImgs/train_black.png");
-  whiteTrain = loadImage("/vehicleImgs/train_white.png");
-  busStopImg = loadImage("/vehicleImgs/bus_stop.png")
-  digitalFont = loadFont("digital-7.ttf")
+  railStations = loadJSON("/data-images/rail-stations.geojson")
+  blackBus = loadImage("/data-images/bus-black.png");
+  whiteBus = loadImage("/data-images/bus-white.png");
+  blackTrain = loadImage("/data-images/train-black.png");
+  whiteTrain = loadImage("/data-images/train-white.png");
+  busStopImg = loadImage("/data-images/bus-stop.png")
+  digitalFont = loadFont("/data-images/digital-7.ttf")
 }
 
 
@@ -72,22 +74,25 @@ function setup() {
 function draw() {
   clear()
 
-  if (baseMap.getZoom() > 15) {
-    //Show bus stop name on hover
-    //Two loops so that the name is always drawn on top of stop icon
-    for (let i = 0; i < busStops.length; i++) {
-      busStops[i].show(baseMap);
-    }
-    for (let i = 0; i < busStops.length; i++) { 
-      busStops[i].showName();
-    }
-  }
-
+  //Draw live vehicles
   if (vehicles.length != 0) {
     for (let i = vehicles.length - 1; i >= 0; i--) {
       vehicles[i].show(baseMap);
     }
   }
+
+  if (baseMap.getZoom() > 15) {
+    //Show bus stop name on hover
+    //Two loops so that the name is always drawn on top of stop icon
+    for (let i = 0; i < stops.length; i++) {
+      stops[i].show(baseMap);
+    }
+    for (let i = 0; i < stops.length; i++) { 
+      stops[i].showName();
+    }
+  }
+
+
 
 
   fill(150, 150, 150, 150);
@@ -121,7 +126,8 @@ function addLiveBusRoutes() {
 function addLiveTrainRoutes() {
   let lines = [];
   for (let i in liveRailData) {
-    const line = liveRailData[i].line;
+    let line = liveRailData[i].line;
+    line = line.replace("/", " ") + " Line";
     if (!lines.includes(line)) { 
       lines.push(line)
       routeDropdown.option(line)
@@ -134,16 +140,17 @@ function addLiveTrainRoutes() {
 function routeChanged() {
   routeNumber = routeDropdown.value()
   vehicles = [];
-  busStops = [];
+  stops = [];
   selectedVehicleIndex = undefined;
-  askRouteStops(routeNumber);
   if (transportationMode === busMode) { 
     getRouteStartEnd(liveBusData.routes[0][routeNumber]); 
     menu = new BusMenu(selectedVehicleInfo, routeNumber, routeText);
     getBusRoutes(liveBusData);
+    askBusStops(routeNumber);
   } else if (transportationMode == railMode) {
       menu = new TrainMenu(selectedVehicleInfo, routeNumber);
       getRailRoutes();
+      getRailStations();
   }
 }
 
@@ -157,7 +164,7 @@ function askRoutes(){
   }
 }
 
-function askRouteStops(routeNumber) {
+function askBusStops(routeNumber) {
   loadJSON("https://www3.septa.org/hackathon/Stops/?req1=" + routeNumber, getRouteStops, "jsonp");
 }
 
@@ -168,7 +175,7 @@ function getRailRoutes(railData) {
   if (liveRailData === undefined) return;
 
   for (let i in liveRailData) {
-    if (routeDropdown.value() === liveRailData[i].line) {
+    if (routeDropdown.value() === liveRailData[i].line.replace("/", " ") + " Line") {
       const train = liveRailData[i];
 
       const trainNr = Number(train.trainno);
@@ -247,13 +254,27 @@ function getBusRoutes(busData) {
 }
 
 
+//Add bus stops of the current line to the map
 function getRouteStops(busStopData) {
   for (let i = 0; i < busStopData.length; i++) {
     const busStop = new BusStop(busStopData[i].lat, busStopData[i].lng, busStopData[i].stopname.replace("amp;", ""))
-    busStops.push(busStop);
+    stops.push(busStop);
   }
 }
 
+
+//Add rail stations of the current line to the map
+function getRailStations() {
+  for (let i = 0; i < railStations.features.length; i++) {
+    const station = railStations.features[i];
+
+    if (station.properties.Line_Name == routeDropdown.value()) {
+      const coords = station.geometry.coordinates;
+      const railStation = new BusStop(coords[1], coords[0], station.properties.Station_Name);
+      stops.push(railStation);
+    }
+  }
+}
 
 
 function getRouteStartEnd(route) {
@@ -265,7 +286,6 @@ function getRouteStartEnd(route) {
     }
   }
 }
-
 
 
 function mouseClicked() {
@@ -289,10 +309,11 @@ function mouseClicked() {
     }
   }
 
-  //Change transportation mode
+  //Check click on mode buttons and do all neccessary stuff
   if (dist(mouseX, mouseY, width - 130, height - 100) <= 45) { 
     transportationMode = busMode; 
     vehicles = [];
+    stops = [];
     selectedVehicleInfo = undefined;
     selectedVehicleIndex = undefined;
     routeNumber = undefined;
@@ -307,6 +328,7 @@ function mouseClicked() {
   else if (dist(mouseX, mouseY, width - 70, height - 100) <= 45) { 
     transportationMode = railMode;
     vehicles = [];
+    stops = [];
     selectedVehicleInfo = undefined;
     selectedVehicleIndex = undefined;
     routeNumber = undefined;
@@ -362,7 +384,3 @@ function drawModeButtons() {
     image(whiteTrain, width - 70, height - 100, 32, 32);
   }
 }
-
-
-
-

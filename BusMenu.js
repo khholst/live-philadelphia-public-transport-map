@@ -39,10 +39,9 @@ class BusMenu extends Menu {
           text("Select a route", width - 100, 110)
         }
 
-
+        //Draw selected bus attributes
         const busAttributes = ["DIRECTION", "DESTINATION", "NEXT STOP", "TIMING", "SEATS"]
         this.drawAttributes(busAttributes);
-
 
         if (this.destination != undefined) {
             textSize(13);

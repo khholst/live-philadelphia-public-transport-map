@@ -6,6 +6,7 @@ class BusStop {
     }
 
     show(baseMap) {
+        imageMode(CENTER);
         this.locationInPixels = baseMap.latLngToPixel(this.coords.x, this.coords.y);
         image(busStopImg, this.locationInPixels.x, this.locationInPixels.y)
     }

@@ -29,7 +29,7 @@ class Train extends Vehicle {
     select() {
         if (this.locationInPixels != undefined) {
             if (dist(mouseX, mouseY, this.locationInPixels.x, this.locationInPixels.y) < 15) {
-                this.img = whiteBus;
+                this.img = whiteTrain;
                 menu = new TrainMenu(this.updateInfo(), routeNumber, routeText)
                 return this.updateInfo();
             }
