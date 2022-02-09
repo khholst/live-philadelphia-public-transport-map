@@ -13,3 +13,5 @@ The data that is being processed and visualised is fetched from the [SEPTA API s
 For graphics, the application uses [p5.js](https://p5js.org/).
 
 Application is deployed [here](https://philadelphia-live-transit.herokuapp.com/)
+
+![Snipshot of the application!] (philly-snip.PNG "Snipshot of the application")
