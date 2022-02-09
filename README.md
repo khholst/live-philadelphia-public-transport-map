@@ -8,8 +8,8 @@ It's possible to select specific vehicles to access more data such as:
 - timing
 - free seats
 
-As a basemap the application uses [Mapbox tiles] (https://www.mapbox.com/).
-The data that is being processed and visualised is fetched from the [SEPTA API service] (http://www3.septa.org/api/) every 10 seconds.
-For graphics, the application uses [p5.js] (https://p5js.org/).
+As a basemap the application uses [Mapbox tiles](https://www.mapbox.com/).
+The data that is being processed and visualised is fetched from the [SEPTA API service](http://www3.septa.org/api/) every 10 seconds.
+For graphics, the application uses [p5.js](https://p5js.org/).
 
-Application is deployed [here] (https://philadelphia-live-transit.herokuapp.com/)
+Application is deployed [here](https://philadelphia-live-transit.herokuapp.com/)
