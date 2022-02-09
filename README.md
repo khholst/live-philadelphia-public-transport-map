@@ -1,4 +1,4 @@
-## Real time Philadelphia public transport application
+## Philadelphia public transport application in real-time
 
 An application that visualises Philapelphia's public transportation data in real time, including on route buses, trolleys, trains and bus stops/train stations.
 It's possible to select specific vehicles to access more data such as:
