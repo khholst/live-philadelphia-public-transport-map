@@ -14,4 +14,4 @@ For graphics, the application uses [p5.js](https://p5js.org/).
 
 Application is deployed [here](https://philadelphia-live-transit.herokuapp.com/)
 
-![Snipshot of the application] (https://github.com/khholst/live-philadelphia-public-transport-map/blob/main/philly-snip.PNG?raw=true "Snipshot of the application")
+![Snipshot of the application!] (https://github.com/khholst/live-philadelphia-public-transport-map/blob/main/philly-snip.PNG?raw=true "Snipshot of the application")
